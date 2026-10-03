@@ -82,6 +82,47 @@ test('rejects valid JSON that is not an object', async () => {
   assert.match((await response.json()).error, /must be an object/);
 });
 
+test('validates requests before reporting a missing OpenAI key', async () => {
+  let called = false;
+  const unconfiguredServer = createServer({
+    apiKey: '',
+    fetchImpl: async () => {
+      called = true;
+      return new Response('{}');
+    }
+  });
+  await new Promise((resolve) => unconfiguredServer.listen(0, '127.0.0.1', resolve));
+  try {
+    const origin = `http://127.0.0.1:${unconfiguredServer.address().port}`;
+    const emptyPrompt = await fetch(`${origin}/api/generate-image`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: ' ' })
+    });
+    assert.equal(emptyPrompt.status, 400);
+    assert.match((await emptyPrompt.json()).error, /between 1 and 1000 characters/);
+
+    const invalidImage = await fetch(`${origin}/api/extract-text`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image: 'not-an-image' })
+    });
+    assert.equal(invalidImage.status, 400);
+    assert.match((await invalidImage.json()).error, /valid PNG, JPEG, or WebP/);
+
+    const validPrompt = await fetch(`${origin}/api/generate-image`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: 'A small red kite' })
+    });
+    assert.equal(validPrompt.status, 503);
+    assert.match((await validPrompt.json()).error, /Set OPENAI_API_KEY/);
+    assert.equal(called, false);
+  } finally {
+    await new Promise((resolve, reject) => unconfiguredServer.close((error) => error ? reject(error) : resolve()));
+  }
+});
+
 test('sends image-generation requests to OpenAI and returns the generated image', async () => {
   let request;
   const apiServer = createServer({

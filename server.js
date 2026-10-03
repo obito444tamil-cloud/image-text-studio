@@ -163,10 +163,6 @@ async function handleApi(req, res, options) {
     return;
   }
 
-  if (!options.apiKey) {
-    throw new HttpError(503, 'The app is not configured yet. Set OPENAI_API_KEY on the server.');
-  }
-
   const body = await readJson(req);
   if (body === null || typeof body !== 'object' || Array.isArray(body)) {
     throw new HttpError(400, 'The JSON request body must be an object.');
@@ -175,6 +171,9 @@ async function handleApi(req, res, options) {
     const prompt = typeof body.prompt === 'string' ? body.prompt.trim() : '';
     if (!prompt || prompt.length > MAX_PROMPT_LENGTH) {
       throw new HttpError(400, `Enter a prompt between 1 and ${MAX_PROMPT_LENGTH} characters.`);
+    }
+    if (!options.apiKey) {
+      throw new HttpError(503, 'The app is not configured yet. Set OPENAI_API_KEY on the server.');
     }
     const size = IMAGE_SIZES.has(body.size) ? body.size : '1024x1024';
     const result = await callOpenAI(options.fetchImpl, options.apiKey, 'images/generations', {
@@ -193,6 +192,9 @@ async function handleApi(req, res, options) {
   }
 
   const image = validateImageDataUrl(body.image);
+  if (!options.apiKey) {
+    throw new HttpError(503, 'The app is not configured yet. Set OPENAI_API_KEY on the server.');
+  }
   const result = await callOpenAI(options.fetchImpl, options.apiKey, 'responses', {
     model: options.textModel,
     input: [{
