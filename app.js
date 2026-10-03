@@ -6,6 +6,7 @@ const ALLOWED_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp']);
 const modeButtons = [...document.querySelectorAll('.mode-button')];
 const generatePanel = document.querySelector('#generate-panel');
 const recognizePanel = document.querySelector('#recognize-panel');
+const assistantPanel = document.querySelector('#assistant-panel');
 const promptInput = document.querySelector('#prompt');
 const promptCount = document.querySelector('#prompt-count');
 const generateButton = document.querySelector('#generate-button');
@@ -20,10 +21,15 @@ const textOutput = document.querySelector('#text-output');
 const copyButton = document.querySelector('#copy-text');
 const downloadButton = document.querySelector('#download-text');
 const statusMessage = document.querySelector('#status-message');
+const chatForm = document.querySelector('#chat-form');
+const chatInput = document.querySelector('#chat-input');
+const chatMessages = document.querySelector('#chat-messages');
+const chatSendButton = document.querySelector('#chat-send');
 
 let selectedFile = null;
 let previewUrl = null;
 let recognizedText = '';
+const conversation = [];
 
 function showStatus(message, isError = false) {
   statusMessage.textContent = message;
@@ -37,15 +43,15 @@ function setBusy(button, busy, label) {
 }
 
 function setMode(mode) {
-  const generating = mode === 'generate';
   modeButtons.forEach((button) => {
     const active = button.dataset.mode === mode;
     button.classList.toggle('is-active', active);
     button.setAttribute('aria-selected', String(active));
     button.tabIndex = active ? 0 : -1;
   });
-  generatePanel.hidden = !generating;
-  recognizePanel.hidden = generating;
+  generatePanel.hidden = mode !== 'generate';
+  recognizePanel.hidden = mode !== 'recognize';
+  assistantPanel.hidden = mode !== 'assistant';
   showStatus('');
 }
 
@@ -228,6 +234,53 @@ function updateRecognizedText(text) {
   copyButton.disabled = !text;
   downloadButton.disabled = !text;
 }
+
+function appendChatMessage(role, text, isError = false) {
+  const message = document.createElement('p');
+  message.className = `chat-message chat-message-${role}${isError ? ' chat-message-error' : ''}`;
+  message.textContent = text;
+  chatMessages.append(message);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+  return message;
+}
+
+document.querySelectorAll('.assistant-suggestion').forEach((button) => {
+  button.addEventListener('click', () => {
+    chatInput.value = button.dataset.question;
+    chatInput.focus();
+  });
+});
+
+chatForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const content = chatInput.value.trim();
+  if (!content) {
+    chatInput.focus();
+    return;
+  }
+
+  const userMessage = { role: 'user', content };
+  conversation.push(userMessage);
+  while (conversation.length > 12) conversation.shift();
+  appendChatMessage('user', content);
+  chatInput.value = '';
+  setBusy(chatSendButton, true, 'Thinking...');
+  const pendingMessage = appendChatMessage('assistant', 'Thinking…');
+
+  try {
+    const result = await postJson('/api/assistant', { messages: conversation });
+    pendingMessage.remove();
+    conversation.push({ role: 'assistant', content: result.reply });
+    while (conversation.length > 12) conversation.shift();
+    appendChatMessage('assistant', result.reply);
+  } catch (error) {
+    pendingMessage.remove();
+    appendChatMessage('assistant', error.message, true);
+  } finally {
+    setBusy(chatSendButton, false);
+    chatInput.focus();
+  }
+});
 
 recognizeButton.addEventListener('click', async () => {
   if (!selectedFile) return;

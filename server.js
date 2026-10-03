@@ -8,6 +8,8 @@ const PUBLIC_DIR = path.join(__dirname, 'public');
 const MAX_REQUEST_BYTES = 8 * 1024 * 1024;
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const MAX_PROMPT_LENGTH = 1000;
+const MAX_CHAT_MESSAGES = 12;
+const MAX_CHAT_MESSAGE_LENGTH = 2000;
 const IMAGE_SIZES = new Set(['1024x1024', '1536x1024', '1024x1536']);
 const STATIC_FILES = new Map([
   ['/', ['index.html', 'text/html; charset=utf-8']],
@@ -158,7 +160,7 @@ async function handleApi(req, res, options) {
     return;
   }
 
-  if (req.method !== 'POST' || !['/api/generate-image', '/api/extract-text'].includes(req.url)) {
+  if (req.method !== 'POST' || !['/api/generate-image', '/api/extract-text', '/api/assistant'].includes(req.url)) {
     sendJson(res, 404, { error: 'Not found.' });
     return;
   }
@@ -173,7 +175,7 @@ async function handleApi(req, res, options) {
       throw new HttpError(400, `Enter a prompt between 1 and ${MAX_PROMPT_LENGTH} characters.`);
     }
     if (!options.apiKey) {
-      throw new HttpError(503, 'The app is not configured yet. Set OPENAI_API_KEY on the server.');
+      throw new HttpError(503, 'The AI service is not configured. Set OPENAI_API_KEY in the server environment; never put it in the webpage or share it.');
     }
     const size = IMAGE_SIZES.has(body.size) ? body.size : '1024x1024';
     const result = await callOpenAI(options.fetchImpl, options.apiKey, 'images/generations', {
@@ -191,9 +193,42 @@ async function handleApi(req, res, options) {
     return;
   }
 
+  if (req.url === '/api/assistant') {
+    const messages = body.messages;
+    if (!Array.isArray(messages) || messages.length === 0 || messages.length > MAX_CHAT_MESSAGES) {
+      throw new HttpError(400, `Send between 1 and ${MAX_CHAT_MESSAGES} recent chat messages.`);
+    }
+    const conversation = messages.map((message) => {
+      if (!message || typeof message !== 'object' || Array.isArray(message) ||
+          !['user', 'assistant'].includes(message.role) ||
+          typeof message.content !== 'string' ||
+          !message.content.trim() ||
+          message.content.length > MAX_CHAT_MESSAGE_LENGTH) {
+        throw new HttpError(400, `Each message must have a user or assistant role and 1-${MAX_CHAT_MESSAGE_LENGTH} characters.`);
+      }
+      return { role: message.role, content: message.content.trim() };
+    });
+    if (conversation[conversation.length - 1].role !== 'user') {
+      throw new HttpError(400, 'The latest chat message must be from you.');
+    }
+    if (!options.apiKey) {
+      throw new HttpError(503, 'The AI service is not configured. Set OPENAI_API_KEY in the server environment; never put it in the webpage or share it.');
+    }
+    const result = await callOpenAI(options.fetchImpl, options.apiKey, 'responses', {
+      model: options.textModel,
+      instructions: 'You are Canvas Studio’s helpful creative assistant. Give clear, friendly, practical answers. Help people refine image prompts and understand text extracted from images. Do not claim to create images or inspect uploaded images in chat; direct users to the dedicated studio tools for those tasks.',
+      input: conversation,
+      max_output_tokens: 1200
+    });
+    const reply = extractResponseText(result);
+    if (!reply) throw new HttpError(502, 'The assistant returned an empty response. Please try again.');
+    sendJson(res, 200, { reply });
+    return;
+  }
+
   const image = validateImageDataUrl(body.image);
   if (!options.apiKey) {
-    throw new HttpError(503, 'The app is not configured yet. Set OPENAI_API_KEY on the server.');
+    throw new HttpError(503, 'The AI service is not configured. Set OPENAI_API_KEY in the server environment; never put it in the webpage or share it.');
   }
   const result = await callOpenAI(options.fetchImpl, options.apiKey, 'responses', {
     model: options.textModel,

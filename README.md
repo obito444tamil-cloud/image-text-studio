@@ -1,8 +1,8 @@
 # Canvas — Image & Text Studio
 
-A small Node.js app for generating an image from a text prompt and transcribing
-text from an uploaded image. The browser never receives the OpenAI API key.
-Uploaded images are sent to OpenAI for recognition.
+A small Node.js app with an AI creative assistant, image generation from text,
+and text recognition from uploaded images. The browser never receives the
+OpenAI API key. Uploaded images are sent to OpenAI for recognition.
 
 ## Run locally
 
@@ -16,9 +16,10 @@ npm start
 
 Open <http://localhost:3000>. Image generation defaults to OpenAI's
 `gpt-image-2.5-flare` fast image model at low quality for quicker results and
-lower generation cost. To use another model, set `OPENAI_IMAGE_MODEL` or
-`OPENAI_TEXT_MODEL` in the server environment. Never put the API key in
-`public/app.js` or commit it to source control.
+lower generation cost. The creative assistant and image-text recognition use
+the Responses API with `gpt-4.1-mini` by default. To use another model, set
+`OPENAI_IMAGE_MODEL` or `OPENAI_TEXT_MODEL` in the server environment. Never
+put the API key in `public/app.js` or commit it to source control.
 
 ## Test
 
@@ -40,6 +41,6 @@ environment settings, not committed to the repository.
 
 After deployment, open the service's HTTPS URL and confirm `/healthz` returns
 `{"status":"ok"}`. Image creation and recognition use OpenAI's API and may
-incur charges; check your API account's model access, billing, and usage limits
-before sharing the public URL. An OpenAI API key is separate from a ChatGPT
-subscription.
+incur charges, as can assistant messages and image recognition. Check your API
+account's model access, billing, and usage limits before sharing the public
+URL. An OpenAI API key is separate from a ChatGPT subscription.
