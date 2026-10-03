@@ -2,7 +2,12 @@
 
 const assert = require('node:assert/strict');
 const { after, before, test } = require('node:test');
-const { createServer } = require('../server');
+const fsSync = require('node:fs');
+const fs = require('node:fs/promises');
+const os = require('node:os');
+const path = require('node:path');
+const serverPath = path.join(__dirname, fsSync.existsSync(path.join(__dirname, '..', 'server.js')) ? '..' : '.', 'server.js');
+const { createServer } = require(serverPath);
 
 let server;
 let baseUrl;
@@ -24,6 +29,37 @@ test('serves the app and health endpoint', async () => {
   const health = await fetch(`${baseUrl}/healthz`);
   assert.equal(health.status, 200);
   assert.deepEqual(await health.json(), { status: 'ok' });
+});
+
+test('serves static assets from the repository root when the public folder is absent', async () => {
+  const flatRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'image-text-studio-flat-'));
+  const emptyPublicDir = path.join(flatRoot, 'public');
+  await fs.mkdir(emptyPublicDir);
+  await fs.writeFile(path.join(flatRoot, 'index.html'), '<!doctype html><title>Flat layout</title>');
+  await fs.writeFile(path.join(flatRoot, 'styles.css'), 'body { color: green; }');
+  await fs.writeFile(path.join(flatRoot, 'app.js'), 'document.body.dataset.test = "ok";');
+
+  const flatServer = createServer({
+    apiKey: 'test-key',
+    publicDir: emptyPublicDir,
+    fallbackDir: flatRoot
+  });
+  await new Promise((resolve) => flatServer.listen(0, '127.0.0.1', resolve));
+  try {
+    const origin = `http://127.0.0.1:${flatServer.address().port}`;
+    for (const [url, expected] of [
+      ['/', 'Flat layout'],
+      ['/styles.css', 'color: green'],
+      ['/app.js', 'dataset.test']
+    ]) {
+      const response = await fetch(`${origin}${url}`);
+      assert.equal(response.status, 200, `${url} should be served from the fallback directory`);
+      assert.match(await response.text(), new RegExp(expected));
+    }
+  } finally {
+    await new Promise((resolve, reject) => flatServer.close((error) => error ? reject(error) : resolve()));
+    await fs.rm(flatRoot, { recursive: true, force: true });
+  }
 });
 
 test('rejects an empty image prompt before calling OpenAI', async () => {

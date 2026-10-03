@@ -31,6 +31,17 @@ function sendJson(res, status, value) {
   res.end(JSON.stringify(value));
 }
 
+async function readStaticFile(filename, publicDir, fallbackDir) {
+  try {
+    return await fs.readFile(path.join(publicDir, filename));
+  } catch (error) {
+    if (error.code !== 'ENOENT' || path.resolve(publicDir) === path.resolve(fallbackDir)) {
+      throw error;
+    }
+    return fs.readFile(path.join(fallbackDir, filename));
+  }
+}
+
 function readJson(req) {
   return new Promise((resolve, reject) => {
     const contentType = req.headers['content-type'] || '';
@@ -205,9 +216,11 @@ function createServer({
   apiKey = process.env.OPENAI_API_KEY,
   imageModel = process.env.OPENAI_IMAGE_MODEL || 'gpt-image-2.5-flare',
   textModel = process.env.OPENAI_TEXT_MODEL || 'gpt-4.1-mini',
-  fetchImpl = globalThis.fetch
+  fetchImpl = globalThis.fetch,
+  publicDir = PUBLIC_DIR,
+  fallbackDir = __dirname
 } = {}) {
-  const options = { apiKey, imageModel, textModel, fetchImpl };
+  const options = { apiKey, imageModel, textModel, fetchImpl, publicDir, fallbackDir };
 
   return http.createServer(async (req, res) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -229,7 +242,7 @@ function createServer({
         sendJson(res, 404, { error: 'Not found.' });
         return;
       }
-      const content = await fs.readFile(path.join(PUBLIC_DIR, asset[0]));
+      const content = await readStaticFile(asset[0], options.publicDir, options.fallbackDir);
       res.writeHead(200, {
         'Content-Type': asset[1],
         'Cache-Control': 'no-cache',
