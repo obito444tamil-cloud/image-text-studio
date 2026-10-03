@@ -1,0 +1,14 @@
+{
+  "name": "image-text-studio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Generate images from prompts and extract text from images with OpenAI.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

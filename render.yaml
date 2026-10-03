@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: image-text-studio
+    runtime: node
+    plan: free
+    buildCommand: npm install --omit=dev
+    startCommand: npm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_IMAGE_MODEL
+        value: gpt-image-2.5-flare
+      - key: OPENAI_TEXT_MODEL
+        value: gpt-4.1-mini

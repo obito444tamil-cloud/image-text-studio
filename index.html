@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f8f5">
+  <meta name="description" content="Create images from a text prompt and recognize words in your pictures with Canvas Studio.">
+  <title>Canvas Studio — Create with a little imagination</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="Canvas home">
+      <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
+      <span>canvas<span class="brand-light"> studio</span></span>
+    </a>
+    <a class="topbar-note" href="#studio"><span class="status-dot"></span> A little room to imagine <span class="note-arrow" aria-hidden="true">↘</span></a>
+  </header>
+
+  <main>
+    <section class="hero" aria-labelledby="page-title">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="eyebrow-line"></span> YOUR CREATIVE SIDEKICK</p>
+        <h1 id="page-title">A little idea can go <span>a long way.</span></h1>
+        <p class="intro-copy">Make pictures from the things you imagine. Find the words hiding in a picture. Start anywhere.</p>
+        <a class="hero-cta" href="#studio">Make something <span aria-hidden="true">↓</span></a>
+        <div class="hero-proof"><span class="proof-avatars" aria-hidden="true"><span>✳</span><span>◌</span><span>✦</span></span><span>Two thoughtful tools. One creative space.</span></div>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <div class="hero-art-orbit"></div>
+        <div class="hero-sun"></div>
+        <div class="hero-paper hero-paper-back"></div>
+        <div class="hero-paper hero-paper-front">
+          <div class="paper-topline"><span></span><span></span><span></span></div>
+          <div class="paper-landscape"><span class="paper-moon"></span><span class="paper-hill paper-hill-a"></span><span class="paper-hill paper-hill-b"></span><span class="paper-flower paper-flower-a">✳</span><span class="paper-flower paper-flower-b">✦</span></div>
+          <div class="paper-caption"><span></span><span></span></div>
+        </div>
+        <div class="art-note art-note-top"><span>✳</span> made of ideas</div>
+        <div class="art-note art-note-bottom"><span>✦</span> ready when you are</div>
+        <div class="hero-star hero-star-a">✧</div><div class="hero-star hero-star-b">✳</div>
+      </div>
+    </section>
+
+    <section class="studio" id="studio" aria-label="Image and text tools">
+      <div class="studio-intro">
+        <div><p class="eyebrow">PICK A LITTLE MAGIC</p><h2>What shall we make today?</h2></div>
+        <span class="studio-edition"><span class="status-dot"></span> YOUR STUDIO IS OPEN</span>
+      </div>
+      <div class="mode-switch" role="tablist" aria-label="Choose a tool">
+        <button class="mode-button is-active" id="generate-tab" type="button" role="tab" aria-selected="true" aria-controls="generate-panel" data-mode="generate">
+          <span class="mode-icon" aria-hidden="true">✳</span>
+          <span><strong>Text to image</strong><small>Bring an idea to life</small></span>
+        </button>
+        <button class="mode-button" id="recognize-tab" type="button" role="tab" aria-selected="false" aria-controls="recognize-panel" data-mode="recognize">
+          <span class="mode-icon scan-icon" aria-hidden="true">▧</span>
+          <span><strong>Image to text</strong><small>Read words from a picture</small></span>
+        </button>
+      </div>
+
+      <div class="tool-panel" id="generate-panel" role="tabpanel" aria-labelledby="generate-tab">
+        <div class="controls">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">TEXT TO IMAGE</p>
+              <h2>What would you like to see?</h2>
+            </div>
+            <span class="step-label">01 <span>/ 02</span></span>
+          </div>
+          <label class="field-label" for="prompt">Describe your image</label>
+          <textarea id="prompt" maxlength="1000" placeholder="A tiny greenhouse on the moon, full of wildflowers under a lavender sky..." rows="6"></textarea>
+          <div class="field-meta"><span>Little details make lovely pictures.</span><span id="prompt-count" aria-live="polite">0 / 1000</span></div>
+          <div class="prompt-ideas">
+            <span class="ideas-label">A starting thought</span>
+            <div class="idea-chips" aria-label="Example image ideas">
+              <button class="idea-chip" type="button" data-prompt="A sleepy orange cat curled up in a sunlit bookshop, watercolor illustration">A cozy little scene <span aria-hidden="true">↗</span></button>
+              <button class="idea-chip" type="button" data-prompt="A tiny seaside village floating among soft clouds at sunset, whimsical storybook art">Something dreamlike <span aria-hidden="true">↗</span></button>
+            </div>
+          </div>
+          <label class="field-label size-label" for="image-size">Image shape</label>
+          <select id="image-size">
+            <option value="1024x1024">Square</option>
+            <option value="1536x1024">Landscape</option>
+            <option value="1024x1536">Portrait</option>
+          </select>
+          <button class="primary-button" id="generate-button" type="button">
+            <span>Create image</span><span class="button-arrow" aria-hidden="true">↗</span>
+          </button>
+          <p class="privacy-note">Images are generated by OpenAI. Avoid entering private or sensitive information.</p>
+        </div>
+        <div class="result-area" id="generation-result" aria-live="polite">
+          <div class="empty-state">
+            <div class="empty-art" aria-hidden="true">
+              <span class="art-sun"></span><span class="art-hill art-hill-back"></span><span class="art-hill art-hill-front"></span>
+              <span class="art-spark art-spark-one">✳</span><span class="art-spark art-spark-two">✦</span>
+            </div>
+            <h3>Your next idea starts here.</h3>
+            <p>Write a description and your image will appear in this space.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="tool-panel" id="recognize-panel" role="tabpanel" aria-labelledby="recognize-tab" hidden>
+        <div class="controls">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">IMAGE TO TEXT</p>
+              <h2>What does your image say?</h2>
+            </div>
+            <span class="step-label">02 <span>/ 02</span></span>
+          </div>
+          <label class="field-label" for="image-file">Choose an image</label>
+          <input class="visually-hidden" id="image-file" type="file" accept="image/png,image/jpeg,image/webp">
+          <label class="upload-box" id="upload-box" for="image-file">
+            <span class="upload-symbol" aria-hidden="true">↑</span>
+            <span class="upload-title" id="upload-title">Drop an image here or <span>browse files</span></span>
+            <span class="upload-help">PNG, JPG, or WebP · up to 5 MB</span>
+          </label>
+          <div class="preview-wrap is-hidden" id="preview-wrap">
+            <img id="image-preview" alt="Selected image preview">
+            <button class="remove-image" id="remove-image" type="button" aria-label="Remove selected image">×</button>
+          </div>
+          <button class="primary-button" id="recognize-button" type="button" disabled>
+            <span>Recognize text</span><span class="button-arrow" aria-hidden="true">↗</span>
+          </button>
+          <p class="privacy-note">Your image is sent to OpenAI to recognize its text. Don’t upload sensitive images.</p>
+        </div>
+        <div class="recognition-result" id="recognition-result" aria-live="polite">
+          <div class="result-heading">
+            <div><p class="eyebrow">YOUR RESULT</p><h3>Extracted text</h3></div>
+            <div class="result-actions">
+              <button class="text-button" id="copy-text" type="button" disabled>Copy</button>
+              <button class="text-button" id="download-text" type="button" disabled>Download</button>
+            </div>
+          </div>
+          <div class="text-output" id="text-output" tabindex="0">Your recognized text will appear here.</div>
+        </div>
+      </div>
+      <p class="status-message" id="status-message" role="status" aria-live="polite"></p>
+    </section>
+    <section class="feature-row" aria-label="Studio highlights">
+      <article class="feature-card"><span class="feature-icon feature-icon-spark" aria-hidden="true">✳</span><div><h3>From daydream to picture</h3><p>Give your imagination a few words and a place to start.</p></div><span class="feature-number">01</span></article>
+      <article class="feature-card"><span class="feature-icon feature-icon-scan" aria-hidden="true">▧</span><div><h3>From picture to words</h3><p>Find text in your photos, notes, and everyday images.</p></div><span class="feature-number">02</span></article>
+      <article class="feature-card"><span class="feature-icon feature-icon-save" aria-hidden="true">↓</span><div><h3>Keep what you make</h3><p>Download your creation or copy text in a little tap.</p></div><span class="feature-number">03</span></article>
+    </section>
+    <footer class="footer">
+      <a class="brand footer-brand" href="/" aria-label="Canvas Studio home"><span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span><span></span></span><span>canvas<span class="brand-light"> studio</span></span></a>
+      <p>Made with curiosity, for curious minds.</p>
+      <span class="footer-note">Make a little something today <span aria-hidden="true">✳</span></span>
+    </footer>
+  </main>
+</body>
+</html>
